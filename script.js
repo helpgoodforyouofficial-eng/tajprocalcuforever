@@ -415,3 +415,12 @@ window.addEventListener('load', () => {
         .catch(() => console.log("Offline mode"));
     }
   });
+
+
+// App load hote hi naam set karne ke liye
+document.addEventListener("DOMContentLoaded", () => {
+    const brand = document.getElementById('main-brand-name');
+    if(brand) brand.innerText = "Taj Calculator";
+    
+    document.title = "Taj Calculator";
+});
