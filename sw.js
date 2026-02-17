@@ -1,4 +1,4 @@
-const cacheName = 'taj-calc-v10'; // Har baar update par v3 se v4, v5 karte rehna
+const cacheName = 'taj-calc-v11'; // Har baar update par v3 se v4, v5 karte rehna
 const assets = [
   './',
   './index.html',
@@ -67,5 +67,6 @@ self.addEventListener('push', e => {
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
+
 
 
