@@ -1,6 +1,5 @@
-// ramadan.js - Fixed Version
+// ramadan.js - Fixed Saving Logic Version
 const isRamadanMode = true; 
-let ramadanTimer;
 
 function initRamadanFeature() {
     if (!isRamadanMode) return;
@@ -33,7 +32,32 @@ function initRamadanFeature() {
                     document.getElementById('country-name').innerText = "🌍 Country: " + loc.country;
                     
                     if (loc.fullData) {
-                        renderCalendarHTML(loc.fullData);
+                        let html = '';
+                        const today = new Date().getDate();
+                        for (let i = today - 6; i <= today + 4; i++) {
+                            if (loc.fullData[i]) {
+                                const day = loc.fullData[i];
+                                const active = (i + 1 === today) ? "border: 1px solid #f29741; background: #333;" : "border-bottom: 1px solid #333;";
+                                html += `<div style="padding: 10px; ${active} display:flex; flex-direction:column; font-size:0.8rem; text-align:left;">
+                                    <div style="display:flex; justify-content:space-between; color:#f29741; font-weight:bold;"><span>${day.date.readable}</span><span>${day.date.hijri.day} ${day.date.hijri.month.en}</span></div>
+                                    <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>🌅 Sehri: ${day.timings.Fajr.split(' ')[0]}</span><span>🌇 Iftari: ${day.timings.Maghrib.split(' ')[0]}</span></div>
+                                </div>`;
+                            }
+                        }
+                        document.getElementById('calendar-list').innerHTML = html;
+                    }
+
+                    // --- NEW: Saved Alerts Load Logic ---
+                    const savedAlerts = localStorage.getItem('tajCalcAlerts');
+                    if (savedAlerts) {
+                        const a = JSON.parse(savedAlerts);
+                        if(document.getElementById('sehri-drop-1')) {
+                            document.getElementById('sehri-drop-1').value = a.sehri1 || "";
+                            document.getElementById('sehri-drop-2').value = a.sehri2 || "";
+                            document.getElementById('iftari-drop-1').value = a.iftari1 || "";
+                            document.getElementById('iftari-drop-2').value = a.iftari2 || "";
+                            handleDropChange();
+                        }
                     }
 
                     document.getElementById('ramadan-display').style.display = 'block';
@@ -51,22 +75,6 @@ function initRamadanFeature() {
     }
 }
 
-// Helper function to render calendar without repeating code
-function renderCalendarHTML(data) {
-    let html = '';
-    const today = new Date().getDate();
-    for (let i = today - 6; i <= today + 4; i++) {
-        if (data[i]) {
-            const day = data[i];
-            const active = (i + 1 === today) ? "border: 1px solid #f29741; background: #333;" : "border-bottom: 1px solid #333;";
-            html += `<div style="padding: 10px; ${active} display:flex; flex-direction:column; font-size:0.8rem; text-align:left;">
-                <div style="display:flex; justify-content:space-between; color:#f29741; font-weight:bold;"><span>${day.date.readable}</span><span>${day.date.hijri.day} ${day.date.hijri.month.en}</span></div>
-                <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>🌅 Sehri: ${day.timings.Fajr.split(' ')[0]}</span><span>🌇 Iftari: ${day.timings.Maghrib.split(' ')[0]}</span></div>
-            </div>`;
-        }
-    }
-    document.getElementById('calendar-list').innerHTML = html;
-}
 
 function createRamadanModal() {
     const modalHTML = `
@@ -127,7 +135,6 @@ async function fetchLocation() {
     const mainBtn = document.getElementById('loc-btn');
     const cityNameEl = document.getElementById('city-name');
     const fiqaVal = document.getElementById('fiqa-select').value;
-    
     mainBtn.innerText = "Finding...";
 
     navigator.geolocation.getCurrentPosition(async (position) => {
@@ -137,7 +144,6 @@ async function fetchLocation() {
             const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
             const geoData = await geoRes.json();
             const addr = geoData.address;
-
             const finalCity = addr.city || addr.town || addr.village || addr.suburb || "Your Area";
             const now = new Date();
             const response = await fetch(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${now.getMonth()+1}&year=${now.getFullYear()}`);
@@ -146,7 +152,6 @@ async function fetchLocation() {
             if(data.code === 200) {
                 const todayIndex = now.getDate() - 1;
                 window.lastFetchedTimings = data.data[todayIndex].timings;
-
                 const locationToSave = {
                     city: finalCity,
                     dist: addr.county || addr.district || "N/A",
@@ -156,92 +161,34 @@ async function fetchLocation() {
                     fullData: data.data 
                 };
                 localStorage.setItem('tajCalcLocation', JSON.stringify(locationToSave));
-
                 cityNameEl.innerText = finalCity;
                 document.getElementById('dist-name').innerText = "🏛 District: " + locationToSave.dist;
                 document.getElementById('prov-name').innerText = "📍 Province: " + locationToSave.prov;
                 document.getElementById('country-name').innerText = "🌍 Country: " + locationToSave.country;
 
-                renderCalendarHTML(data.data);
-                
+                let html = '';
+                for (let i = now.getDate() - 7; i <= now.getDate() + 3; i++) {
+                    if (data.data[i]) {
+                        const day = data.data[i];
+                        const active = (i + 1 === now.getDate()) ? "border: 1px solid #f29741; background: #333;" : "border-bottom: 1px solid #333;";
+                        html += `<div style="padding: 10px; ${active} display:flex; flex-direction:column; font-size:0.8rem; text-align:left;">
+                            <div style="display:flex; justify-content:space-between; color:#f29741; font-weight:bold;"><span>${day.date.readable}</span><span>${day.date.hijri.day} ${day.date.hijri.month.en}</span></div>
+                            <div style="display:flex; justify-content:space-between; margin-top:4px;"><span>🌅 Sehri: ${day.timings.Fajr.split(' ')[0]}</span><span>🌇 Iftari: ${day.timings.Maghrib.split(' ')[0]}</span></div>
+                        </div>`;
+                    }
+                }
+                document.getElementById('calendar-list').innerHTML = html;
                 document.getElementById('ramadan-display').style.display = 'block';
                 document.getElementById('primary-loc-container').style.display = 'none';
                 document.getElementById('secondary-loc-container').style.display = 'block';
-
                 const footer = document.getElementById('fiqa-footer-placeholder');
                 const selector = document.getElementById('fiqa-select');
                 if (footer && selector) { footer.appendChild(selector); selector.style.width = "100%"; }
-
                 mainBtn.innerText = "📍 Detect Location";
                 startRamadanCountdown(window.lastFetchedTimings);
             }
-        } catch (error) {
-            console.error(error);
-            mainBtn.innerText = "Try Again";
-        }
-    }, (e) => {
-        alert("Enable GPS/Location");
-        mainBtn.innerText = "📍 Detect Location";
+        } catch (e) { alert("Error!"); mainBtn.innerText = "📍 Detect Location"; }
     });
-}
-
-function startRamadanCountdown(timings) {
-    if (ramadanTimer) clearInterval(ramadanTimer);
-
-    ramadanTimer = setInterval(() => {
-        const now = new Date();
-        const target = getNextTarget(timings.Fajr.split(' ')[0], timings.Maghrib.split(' ')[0]);
-        const diff = target.time - now;
-
-        if (diff > 0) {
-            const h = Math.floor(diff / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            const s = Math.floor((diff % 60000) / 1000);
-            updateLiveNotification(`${target.name} Alert`, `${h}h ${m}m ${s}s remaining`);
-        } else {
-            // Target reach ho gaya, sound play karein aur next target set karein
-            playAlarmSound();
-            clearInterval(ramadanTimer);
-            startRamadanCountdown(timings);
-        }
-    }, 1000);
-}
-
-function updateLiveNotification(targetName, bodyText) {
-    if (Notification.permission === "granted" && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(registration => {
-            registration.showNotification("Taj Calculator", {
-                body: `${targetName}: ${bodyText}`,
-                icon: './ramadan-icon.png',
-                badge: './ramadan-icon.png',
-                tag: 'ramadan-live-alert',
-                renotify: false,
-                silent: true,
-                requireInteraction: true // Isse notification mobile par ruki rehti hai
-            });
-        });
-    }
-}
-
-function getNextTarget(sehri, iftari) {
-    const now = new Date();
-    const sDate = new Date();
-    const [sH, sM] = sehri.split(':');
-    sDate.setHours(sH, sM, 0);
-    
-    const iDate = new Date();
-    const [iH, iM] = iftari.split(':');
-    iDate.setHours(iH, iM, 0);
-
-    if (now < sDate) return { name: "Sehri", time: sDate };
-    if (now < iDate) return { name: "Iftari", time: iDate };
-    
-    return { name: "Sehri", time: new Date(sDate.getTime() + 86400000) };
-}
-
-function playAlarmSound() {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
-    audio.play().catch(e => console.log("Sound error:", e));
 }
 
 function handleDropChange() {
@@ -250,23 +197,67 @@ function handleDropChange() {
         if(!d1 || !d2) return;
         [d1, d2].forEach(s => Array.from(s.options).forEach(o => o.disabled = false));
         if (d1.value) { const o = Array.from(d2.options).find(x => x.value === d1.value); if(o && d1.value !== "") o.disabled = true; }
-        if (d2.value) { const o = Array.from(d1.options).find(x => x.value === d2.value); if(o && d2.value !== "") o.disabled = true; }
+        if (d2.value) { const o = Array.from(d1.options).find(x => x.value === d1.value); if(o && d2.value !== "") o.disabled = true; }
     });
+}
+
+let ramadanTimer;
+function startRamadanCountdown(timings) {
+    if (ramadanTimer) clearInterval(ramadanTimer);
+    ramadanTimer = setInterval(() => {
+        const now = new Date();
+        const target = getNextTarget(timings.Fajr.split(' ')[0], timings.Maghrib.split(' ')[0]);
+        const diff = target.time - now;
+        if (diff > 0) {
+            const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000), s = Math.floor((diff % 60000) / 1000);
+            updateLiveNotification(`${target.name} Alert`, `${h}h ${m}m ${s}s remaining`);
+        }
+    }, 1000);
+}
+
+function updateLiveNotification(targetName, bodyText) {
+    if (Notification.permission === "granted") {
+        navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification("Taj Calculator", {
+                body: `${targetName}: ${bodyText}`,
+                icon: './ramadan-icon.png',
+                badge: './ramadan-icon.png',
+                tag: 'ramadan-live-alert',
+                renotify: false,
+                silent: true,
+                requireInteraction: true
+            });
+        });
+    }
 }
 
 function saveAllAlerts() {
     Notification.requestPermission().then(p => {
         if(p === 'granted') {
-            alert("Success! Alerts and Countdown Active.");
+            const alerts = {
+                sehri1: document.getElementById('sehri-drop-1').value,
+                sehri2: document.getElementById('sehri-drop-2').value,
+                iftari1: document.getElementById('iftari-drop-1').value,
+                iftari2: document.getElementById('iftari-drop-2').value
+            };
+            localStorage.setItem('tajCalcAlerts', JSON.stringify(alerts));
+            alert("Success! Alerts saved.");
             if(window.lastFetchedTimings) startRamadanCountdown(window.lastFetchedTimings);
             closeRamadanModal();
-        } else {
-            alert("Notification permission denied.");
         }
     });
 }
 
-function toggleLocDetails() { const d = document.getElementById('loc-details'), i = document.getElementById('drop-icon'); d.style.display = (d.style.display==='none')?'block':'none'; i.innerText = (d.style.display==='none')?'▼':'▲'; }
+function getNextTarget(sehri, iftari) {
+    const now = new Date(), sDate = new Date(), iDate = new Date();
+    const [sH, sM] = sehri.split(':'), [iH, iM] = iftari.split(':');
+    sDate.setHours(sH, sM, 0); iDate.setHours(iH, iM, 0);
+    if (now < sDate) return { name: "Sehri", time: sDate };
+    if (now < iDate) return { name: "Iftari", time: iDate };
+    return { name: "Sehri", time: new Date(sDate.getTime() + 86400000) };
+}
+
+function toggleLocDetails() { const d = document.getElementById('loc-details'); d.style.display = (d.style.display==='none')?'block':'none'; }
 function openRamadanModal() { document.getElementById('ramadan-modal').style.display = 'flex'; }
 function closeRamadanModal() { document.getElementById('ramadan-modal').style.display = 'none'; }
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
