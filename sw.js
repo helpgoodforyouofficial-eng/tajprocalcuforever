@@ -61,10 +61,11 @@ self.addEventListener('push', e => {
   const data = e.data ? e.data.json() : {};
   const title = data.title || "Taj Calculator Alert";
   const options = {
-    body: data.body || "Waqt ho gaya hai!",
+    body: data.body || "Time is Completed Now!",
     icon: './icons/icon-192x192.png',
     badge: './icons/icon-72x72.png'
   };
   e.waitUntil(self.registration.showNotification(title, options));
 });
+
 
