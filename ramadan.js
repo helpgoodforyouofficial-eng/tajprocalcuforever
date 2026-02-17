@@ -198,8 +198,8 @@ function updateLiveNotification(targetName, bodyText) {
         navigator.serviceWorker.ready.then(registration => {
             registration.showNotification("Taj Calculator Notifications", {
                 body: `${targetName}: ${bodyText}`,
-                icon: 'https://cdn-icons-png.flaticon.com/512/2319/2319808.png', // Status bar icon
-                badge: 'https://cdn-icons-png.flaticon.com/512/2319/2319808.png',
+                icon: 'ramadan-icon.png', // Status bar icon
+                badge: 'ramadan-icon.png',
                 tag: 'ramadan-live-alert',
                 renotify: false,
                 silent: true,
@@ -261,3 +261,4 @@ function toggleLocDetails() { const d = document.getElementById('loc-details'), 
 function openRamadanModal() { document.getElementById('ramadan-modal').style.display = 'flex'; }
 function closeRamadanModal() { document.getElementById('ramadan-modal').style.display = 'none'; }
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
+
