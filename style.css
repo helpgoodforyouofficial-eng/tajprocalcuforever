@@ -219,12 +219,6 @@
     content: "Taj Calculator";
 }
 
-/* Header mein jo naam nazar aata hai */
-#main-brand-name::before {
-    content: "Taj Calculator";
-    font-weight: bold;
-    color: #f29741; /* Aapka orange color */
-    font-size: 1.2rem;
-}
+
 
 
