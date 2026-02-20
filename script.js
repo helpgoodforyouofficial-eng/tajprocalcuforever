@@ -524,7 +524,7 @@ const appInfoData = {
     developer: "Wasidevelopers",
     devWA: "0334-6800959",
     version: "v2.0.20",
-    installText: "Install Taj Calculator ins,
+    installText: "Install Pro Taj Calculator",
     closeText: "Close"
 };
 
@@ -550,3 +550,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initSplash(); // Agar splash wala function pehle se hai
     initAppInfo();
 });
+
