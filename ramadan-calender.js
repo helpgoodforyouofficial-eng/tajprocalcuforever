@@ -52,7 +52,7 @@ function initRamadanFeature() {
             updateUIWithData(loc);
             if (loc.fullData) renderCalendarHTML(loc.fullData);
             const fifteenDays = 15 * 24 * 60 * 60 * 1000;
-            if (navigator.onLine && (Date.now() - loc.lastUpdate > fifteenDays)) fetchLocation(); 
+            if (navigator.onLine && (Date.now() - (loc.lastUpdate || 0) > fifteenDays)) fetchLocation(); 
         } catch (e) { console.error("Cache Err"); }
     }
 }
@@ -199,9 +199,9 @@ function openRamadanModal() {
 
 function closeRamadanModal() { document.getElementById('ramadan-modal').style.display = 'none'; }
 
-window.addEventListener('DOMContentLoaded', () => { initRamadanFeature(); });
+// Final Listener
+window.addEventListener('DOMContentLoaded', initRamadanFeature);
 
-})('DOMContentLoaded');
-
-// --- FINAL REDUNDANT  ---
+// --- CLEANUP ---
 setInterval(() => { if(_temp_buffer_data.length > 50) _temp_buffer_data = []; }, 60000);
+        
