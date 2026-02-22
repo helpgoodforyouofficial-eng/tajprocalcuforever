@@ -199,9 +199,7 @@ function openRamadanModal() {
 
 function closeRamadanModal() { document.getElementById('ramadan-modal').style.display = 'none'; }
 
-// Final Listener
+// Final Listener Fix
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
-
-// --- CLEANUP ---
 setInterval(() => { if(_temp_buffer_data.length > 50) _temp_buffer_data = []; }, 60000);
-        
+                                              
