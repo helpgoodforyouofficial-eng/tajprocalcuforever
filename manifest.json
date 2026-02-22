@@ -1,0 +1,30 @@
+{
+  "name": "HM ERP System",
+  "short_name": "HM ERP Calculator",
+  "start_url": "./index.html",
+   
+   "display": "minimal",
+  "background_color": "#000000",
+  "theme_color": "#ff9500",
+    "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+       "purpose": "any maskable"
+    },
+    {
+      "src": "sicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+  }
+
+  
+
+
+
+
+
