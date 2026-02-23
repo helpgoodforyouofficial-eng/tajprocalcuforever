@@ -106,25 +106,62 @@ async function fetchLocation() {
     const mainBtn = document.getElementById('loc-btn');
     const fiqaVal = document.getElementById('fiqa-select').value;
     const hasExistingData = localStorage.getItem('tajCalcLocation');
-    if (!navigator.onLine && !hasExistingData) { alert("Internet Required for first time."); return; }
+    
+    if (!navigator.onLine && !hasExistingData) { 
+        alert("Internet Required for first time."); 
+        return; 
+    }
+    
     mainBtn.innerText = "Finding You...";
+    
     navigator.geolocation.getCurrentPosition(async (p) => {
         try {
             if (navigator.onLine) {
-                const geoData = await _secureFetchWrapper(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${p.coords.latitude}&lon=${p.coords.longitude}`);
-                const data = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&method=${fiqaVal}&month=${new Date().getMonth()+1}&year=${new Date().getFullYear()}`);
-                if(data.code === 200) {
-                    const loc = { city: geoData.address.city || geoData.address.town || "My City", dist: geoData.address.district || "N/A", prov: geoData.address.state || "N/A", country: geoData.address.country || "N/A", fullData: data.data, lastUpdate: Date.now() };
+                const lat = p.coords.latitude;
+                const lon = p.coords.longitude;
+                
+                // 1. Current Month Data
+                const m1 = new Date().getMonth() + 1;
+                const y1 = new Date().getFullYear();
+                const res1 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m1}&year=${y1}`);
+                
+                // 2. Next Month Data (March fix)
+                let m2 = m1 + 1;
+                let y2 = y1;
+                if (m2 > 12) { m2 = 1; y2++; }
+                const res2 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m2}&year=${y2}`);
+                
+                if (res1.code === 200 && res2.code === 200) {
+                    // Dono mahino ka data jama (combine) kar diya
+                    const combinedData = [...res1.data, ...res2.data];
+                    
+                    const geoData = await _secureFetchWrapper(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                    
+                    const loc = { 
+                        city: geoData.address.city || geoData.address.town || "My City", 
+                        dist: geoData.address.district || "N/A", 
+                        prov: geoData.address.state || "N/A", 
+                        country: geoData.address.country || "N/A", 
+                        fullData: combinedData, // Ab isme 60 din ka data hai
+                        lastUpdate: Date.now() 
+                    };
+                    
                     localStorage.setItem('tajCalcLocation', JSON.stringify(loc));
-                    updateUIWithData(loc); renderCalendarHTML(data.data);
+                    updateUIWithData(loc); 
+                    renderCalendarHTML(combinedData);
                 }
             } else if (hasExistingData) {
                 const loc = JSON.parse(hasExistingData);
-                updateUIWithData(loc); renderCalendarHTML(loc.fullData);
+                updateUIWithData(loc); 
+                renderCalendarHTML(loc.fullData);
             }
-        } catch (e) { mainBtn.innerText = "Try Again"; }
+        } catch (e) { 
+            mainBtn.innerText = "Try Again"; 
+            console.error(e);
+        }
     }, (e) => { alert("Location access required."); });
 }
+
 
 function updateUIWithData(loc) {
     const _id = (e) => document.getElementById(e);
@@ -202,3 +239,4 @@ function closeRamadanModal() { document.getElementById('ramadan-modal').style.di
 // Final Listener Fix
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
 setInterval(() => { if(_temp_buffer_data.length > 50) _temp_buffer_data = []; }, 60000);
+        
