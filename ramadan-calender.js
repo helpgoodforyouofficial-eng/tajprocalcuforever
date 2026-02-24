@@ -176,13 +176,28 @@ function updateUIWithData(loc) {
 function renderCalendarHTML(data) {
     let html = '';
     const now = new Date();
-    const todayDateNum = now.getDate();
-    let todayIndex = todayDateNum - 1; 
-    const todayInfo = data[todayIndex];
     
+    // --- FIX: Aaj ki date ko API format ke mutabiq match karna ---
+    // API format "24 Feb 2026" hota hai, isliye hum waisa hi string bana rahay hain
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = now.toLocaleString('en-GB', { month: 'short' });
+    const year = now.getFullYear();
+    const todayString = `${day} ${month} ${year}`; 
+
+    // Poore 60 days ke data mein se aaj ki sahi date ka index dhundna
+    let todayIndex = data.findIndex(item => item.date.readable === todayString);
+    
+    // Agar index na milay (system date mismatch), to purana fallback use karein
+    if (todayIndex === -1) {
+        todayIndex = now.getDate() - 1;
+    }
+    // --- FIX END ---
+
+    const todayInfo = data[todayIndex];
     if(todayInfo) {
         const _timePart = todayInfo.timings.Maghrib.split(' ')[0].split(':');
         const mTime = new Date(); mTime.setHours(parseInt(_timePart[0]), parseInt(_timePart[1]), 0);
+        // Agar Iftar ka waqt guzar gaya ho to aglay din ko ACTIVE karo
         if(now >= mTime) todayIndex += 1;
     }
 
@@ -214,6 +229,7 @@ function renderCalendarHTML(data) {
     }, 500);
 }
 
+
 function resetLocation() {
     document.getElementById('ramadan-display').style.display = 'none';
     document.getElementById('primary-loc-container').style.display = 'block';
@@ -240,3 +256,4 @@ function closeRamadanModal() { document.getElementById('ramadan-modal').style.di
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
 setInterval(() => { if(_temp_buffer_data.length > 50) _temp_buffer_data = []; }, 60000);
         
+
