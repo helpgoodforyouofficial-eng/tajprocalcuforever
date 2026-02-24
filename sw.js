@@ -1,4 +1,4 @@
-const cacheName = 'taj-calc-v27'; // Version updated for fresh sync
+const cacheName = 'taj-calc-v28'; // Version updated for fresh sync
 const assets = [
   './',
   './index.html',
@@ -62,4 +62,5 @@ self.addEventListener('fetch', e => {
     })
   );
 });
+
 
