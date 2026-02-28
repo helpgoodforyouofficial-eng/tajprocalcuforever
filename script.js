@@ -391,15 +391,7 @@ function doGeneralWeight() {
     
     
     function doLength() {
-        const u = { m:1, km:1000, ft:0.3048, in:0.0254, cm:0.01 };
-        const f = document.getElementById('l-from').value;
-        const t = document.getElementById('l-to').value;
-        const v = document.getElementById('l-val').value;
-        if (!v) return;
-        document.getElementById('l-res').value = ((v * u[f]) / u[t]).toFixed(3);
-    }
-
-    function togglePopup() {
+        const u = { m:1, km:1000, ft:0.3048, in:0.025function togglePopup() {
         const popup = document.getElementById('custom-popup');
         popup.style.display = (popup.style.display === 'flex') ? 'none' : 'flex';
     }
@@ -467,6 +459,16 @@ function handleInstallClick() {
         deferredPrompt = null;
     });
 }
+
+4, cm:0.01 };
+        const f = document.getElementById('l-from').value;
+        const t = document.getElementById('l-to').value;
+        const v = document.getElementById('l-val').value;
+        if (!v) return;
+        document.getElementById('l-res').value = ((v * u[f]) / u[t]).toFixed(3);
+    }
+
+    
 
 // end Notifications code 
 
@@ -566,6 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSplash(); // Agar splash wala function pehle se hai
     initAppInfo();
 });
+
 
 
 
