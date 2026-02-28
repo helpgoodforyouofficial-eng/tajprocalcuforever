@@ -402,73 +402,78 @@ function doGeneralWeight() {
 
 
 // --- AUTO-INSTALL POPUP LOGIC ---
+// Purane 'AUTO-INSTALL POPUP LOGIC' ko is se badal dein
 let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
-    // 1. Browser ke default prompt ko rokein
     e.preventDefault();
     deferredPrompt = e;
-
-    // 2. Install button container ko active karein
+    
     const installBtnContainer = document.getElementById('install-container'); 
-    if(installBtnContainer) {
-        installBtnContainer.style.display = 'block';
-        
-        // Button ke andar icon aur text set karein
-        const installIcon = document.getElementById('install-icon-id');
-        if(installIcon) installIcon.innerHTML = "<i>📥</i>"; 
-        
-        const installText = document.getElementById('install-text-id');
-        if(installText) installText.innerText = "Install Calculator App";
-    }
+    if(installBtnContainer) installBtnContainer.style.display = 'block';
+});
 
-    // 3. FORCE POPUP: Website load hote hi popup dikhayein
+// --- FORCE POPUP & STATUS CHECK ---
+window.addEventListener('DOMContentLoaded', () => {
+    // Splash screen logic (aapka purana wala)
+    setTimeout(() => { 
+        const splash = document.getElementById('splash-screen');
+        if(splash) {
+            splash.style.opacity = '0'; 
+            setTimeout(() => splash.style.visibility = 'hidden', 500); 
+        }
+    }, 3000);
+
+    // Install Popup logic
     setTimeout(() => {
+        const popup = document.getElementById('custom-popup');
         const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
-        if (!isInstalled && typeof togglePopup === "function") {
+        
+        if (popup && popup.style.display !== 'flex') {
+            popup.style.display = 'flex'; // Har haal mein popup khulega
             
-            // Agar popup pehle se band hai, tabhi kholna
-            const popup = document.getElementById('custom-popup');
-            if (popup && popup.style.display !== 'flex') {
-                togglePopup(); 
-                
-                // Popup title update karein
-                const pTitle = document.getElementById('popup-title');
+            const pTitle = document.getElementById('popup-title');
+            const pDev = document.getElementById('dev-info');
+            const installBtn = document.getElementById('install-btn-id') || document.querySelector('.install-btn-class');
+
+            if (isInstalled) {
+                // Agar pehle se install hai
+                if(pTitle) pTitle.innerText = "Taj App Status";
+                if(pDev) pDev.innerText = "Taj Calculator aapke mobile mein pehle se installed hai. Shukriya!";
+                if(installBtn) {
+                    installBtn.innerText = "✅ Already Installed";
+                    installBtn.style.opacity = "0.7";
+                    installBtn.style.pointerEvents = "none"; // Click disable
+                }
+            } else {
+                // Agar install nahi hai
                 if(pTitle) pTitle.innerText = "Install Taj App";
-                
-                const pDev = document.getElementById('dev-info');
                 if(pDev) pDev.innerText = "Behtareen experience aur offline use karne ke liye app install karein.";
             }
         }
-    }, 2000); // 2 second ka delay
+    }, 2000); // splash screen ke dauran hi background mein ya foran baad aaye
 });
 
-// Install Button ka click function
+// Close Button - Popup band karne ke liye
+function closeInstallPopup() {
+    const popup = document.getElementById('custom-popup');
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}
+
+// Install Button Click
 function handleInstallClick() {
     if (!deferredPrompt) return;
-    
-    deferredPrompt.prompt(); // Browser ka asli prompt dikhayega
-    
+    deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
-            console.log('App Installed Successfully');
-            const installBtnContainer = document.getElementById('install-container');
-            if(installBtnContainer) installBtnContainer.style.display = 'none';
-            if(typeof togglePopup === "function") togglePopup(); // Install ke baad popup band
+            closeInstallPopup();
         }
         deferredPrompt = null;
     });
 }
 
-4, cm:0.01 };
-        const f = document.getElementById('l-from').value;
-        const t = document.getElementById('l-to').value;
-        const v = document.getElementById('l-val').value;
-        if (!v) return;
-        document.getElementById('l-res').value = ((v * u[f]) / u[t]).toFixed(3);
-    }
-
-    
 
 // end Notifications code 
 
@@ -568,6 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initSplash(); // Agar splash wala function pehle se hai
     initAppInfo();
 });
+
 
 
 
