@@ -523,58 +523,85 @@ if(waEl) {
 // Splash Screen ka Private Data
 const splashData = {
     name: "HM ERP System \n Complete School Management",
-    phone: "0300-1516637",
-    address: "Raiwind Lahore Pakistan"
-};
+// --- AUTO-INSTALL & FORCE POPUP LOGIC ---
+let deferredPrompt;
 
-function initSplash() {
-    const shopName = document.getElementById('shop-name-id');
-    const whatsapp = document.getElementById('whatsapp-id');
-    const address = document.getElementById('address-id');
-
-    // JS ke zariye CSS content mein data bhejna
-    if(shopName) shopName.setAttribute('data-text', splashData.name);
-    if(whatsapp) whatsapp.setAttribute('data-num', splashData.phone);
-    if(address) address.setAttribute('data-addr', splashData.address);
-}
-
-// Jab page load ho jaye tab data fill karo
-document.addEventListener('DOMContentLoaded', initSplash);
-
-
-// Central Data (Inko Obfuscate karne se sab hide ho jayega)
-const appInfoData = {
-    developer: "Wasidevelopers",
-    devWA: "0334-6800959",
-    version: "v2.0.28",
-    installText: "Install HM ERP Calculator",
-    closeText: "Close"
-};
-
-function initAppInfo() {
-    const devEl = document.getElementById('dev-info');
-    const waEl = document.getElementById('wa-info');
-    const verEl = document.getElementById('version-info');
-    const insTextEl = document.getElementById('install-text-id');
-    const closeBtnEl = document.getElementById('close-popup-btn');
-
-    // Data load karna (Attributes ke zariye)
-    if(devEl) devEl.setAttribute('data-dev', appInfoData.developer);
-    if(waEl) waEl.setAttribute('data-wa', appInfoData.devWA);
-    if(verEl) verEl.setAttribute('data-ver', appInfoData.version);
-    if(insTextEl) insTextEl.setAttribute('data-ins', appInfoData.installText);
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
     
-    // Close button ka direct text
-    if(closeBtnEl) closeBtnEl.innerText = appInfoData.closeText;
-}
-
-// Pehle wale initSplash ke sath isay bhi call karein
-document.addEventListener('DOMContentLoaded', () => {
-    initSplash(); // Agar splash wala function pehle se hai
-    initAppInfo();
+    const installBtnContainer = document.getElementById('install-container'); 
+    if(installBtnContainer) installBtnContainer.style.display = 'block';
 });
 
+// --- FORCE POPUP ON PAGE LOAD ---
+function showForcePopup() {
+    const popup = document.getElementById('custom-popup');
+    const isInstalled = window.matchMedia('(display-mode: standalone)').matches;
+    
+    if (popup && popup.style.display !== 'flex') {
+        popup.style.display = 'flex'; // Popup lazmi show hoga
+        
+        const pTitle = document.getElementById('popup-title');
+        const pDev = document.getElementById('dev-info');
+        const installBtn = document.getElementById('install-btn-id') || document.querySelector('.install-btn-class');
 
+        if (isInstalled) {
+            // Agar pehle se install hai
+            if(pTitle) pTitle.innerText = "Taj App Status";
+            if(pDev) pDev.innerText = "Taj Calculator aapke mobile mein pehle se installed hai. Shukriya!";
+            if(installBtn) {
+                installBtn.innerText = "✅ Already Installed";
+                installBtn.style.opacity = "0.7";
+                installBtn.style.pointerEvents = "none"; 
+            }
+        } else {
+            // Agar install nahi hai
+            if(pTitle) pTitle.innerText = "Install Taj App";
+            // pDev ka text initAppInfo se auto-load ho jayega
+        }
+    }
+}
 
+// Close button ke liye function
+function closeInstallPopup() {
+    const popup = document.getElementById('custom-popup');
+    if (popup) {
+        popup.style.display = 'none';
+    }
+}
+
+// Install button click logic
+function handleInstallClick() {
+    if (!deferredPrompt) {
+        alert("Browser menu se install karein.");
+        return;
+    }
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+            closeInstallPopup();
+        }
+        deferredPrompt = null;
+    });
+}
+
+// --- DOM Content Loaded (Merged) ---
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Splash Screen hide karna (3 sec baad)
+    setTimeout(() => { 
+        const splash = document.getElementById('splash-screen');
+        if(splash) {
+            splash.style.opacity = '0'; 
+            setTimeout(() => splash.style.visibility = 'hidden', 500); 
+        }
+    }, 3000);
+
+    // 2. App ki info load karna
+    if(typeof initAppInfo === "function") initAppInfo();
+    
+    // 3. 2 second baad Force Popup dikhana
+    setTimeout(showForcePopup, 2000);
+});
 
 
