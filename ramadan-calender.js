@@ -120,21 +120,17 @@ async function fetchLocation() {
                 const lat = p.coords.latitude;
                 const lon = p.coords.longitude;
                 
-                // 1. Current Month Data
                 const m1 = new Date().getMonth() + 1;
                 const y1 = new Date().getFullYear();
                 const res1 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m1}&year=${y1}`);
                 
-                // 2. Next Month Data (March fix)
                 let m2 = m1 + 1;
                 let y2 = y1;
                 if (m2 > 12) { m2 = 1; y2++; }
                 const res2 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m2}&year=${y2}`);
                 
                 if (res1.code === 200 && res2.code === 200) {
-                    // Dono mahino ka data jama (combine) kar diya
                     const combinedData = [...res1.data, ...res2.data];
-                    
                     const geoData = await _secureFetchWrapper(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                     
                     const loc = { 
@@ -142,7 +138,7 @@ async function fetchLocation() {
                         dist: geoData.address.district || "N/A", 
                         prov: geoData.address.state || "N/A", 
                         country: geoData.address.country || "N/A", 
-                        fullData: combinedData, // Ab isme 60 din ka data hai
+                        fullData: combinedData, 
                         lastUpdate: Date.now() 
                     };
                     
@@ -162,7 +158,6 @@ async function fetchLocation() {
     }, (e) => { alert("Location access required."); });
 }
 
-
 function updateUIWithData(loc) {
     const _id = (e) => document.getElementById(e);
     _id('city-name').innerText = loc.city;
@@ -174,41 +169,39 @@ function updateUIWithData(loc) {
 }
 
 function renderCalendarHTML(data) {
+    if (!data || data.length === 0) return;
     let html = '';
     const now = new Date();
     
-    // --- FIX: Aaj ki date ko API format ke mutabiq match karna ---
-    // API format "24 Feb 2026" hota hai, isliye hum waisa hi string bana rahay hain
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = now.toLocaleString('en-GB', { month: 'short' });
-    const year = now.getFullYear();
-    const todayString = `${day} ${month} ${year}`; 
+    // --- STABLE DATE GENERATION ---
+    const d = String(now.getDate()).padStart(2, '0');
+    const m = now.toLocaleString('en-GB', { month: 'short' });
+    const y = now.getFullYear();
+    const todayString = `${d} ${m} ${y}`; 
 
-    // Poore 60 days ke data mein se aaj ki sahi date ka index dhundna
-    let todayIndex = data.findIndex(item => item.date.readable === todayString);
+    let todayIndex = data.findIndex(day => day.date.readable === todayString);
     
-    // Agar index na milay (system date mismatch), to purana fallback use karein
     if (todayIndex === -1) {
-        todayIndex = now.getDate() - 1;
+        todayIndex = now.getDate() - 1; 
     }
-    // --- FIX END ---
 
     const todayInfo = data[todayIndex];
     if(todayInfo) {
         const _timePart = todayInfo.timings.Maghrib.split(' ')[0].split(':');
-        const mTime = new Date(); mTime.setHours(parseInt(_timePart[0]), parseInt(_timePart[1]), 0);
-        // Agar Iftar ka waqt guzar gaya ho to aglay din ko ACTIVE karo
+        const mTime = new Date(); 
+        mTime.setHours(parseInt(_timePart[0]), parseInt(_timePart[1]), 0);
         if(now >= mTime) todayIndex += 1;
     }
 
-    const startRange = todayIndex - 3;
-    const endRange = todayIndex + 15;
+    const startRange = Math.max(0, todayIndex - 3);
+    const endRange = Math.min(data.length - 1, todayIndex + 15);
 
     data.forEach((day, index) => {
         if (index >= startRange && index <= endRange) {
             const isActive = (index === todayIndex);
             const style = isActive ? "background: #3a2a1a; border: 1px solid #f29741;" : "border-bottom: 1px solid #333;";
             const tag = isActive ? " <span style='background:#f29741; color:black; padding:2px 6px; border-radius:5px; font-size:10px;'>ACTIVE</span>" : "";
+            
             html += `<div ${isActive ? 'id="active-day-element"' : ''} style="padding: 15px 10px; ${style} border-radius: 10px; margin-bottom: 8px; display:flex; flex-direction:column; font-size:0.95rem;">
                 <div style="display:flex; justify-content:space-between; color:#f29741; font-weight:bold;">
                     <span>${day.date.readable}${tag}</span>
@@ -222,13 +215,15 @@ function renderCalendarHTML(data) {
         }
     });
     
-    if(html.length > 100) document.getElementById('calendar-list').innerHTML = html;
-    setTimeout(() => {
-        const activeEl = document.getElementById('active-day-element');
-        if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 500);
+    const listEl = document.getElementById('calendar-list');
+    if(listEl && html.length > 0) {
+        listEl.innerHTML = html;
+        setTimeout(() => {
+            const activeEl = document.getElementById('active-day-element');
+            if (activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 500);
+    }
 }
-
 
 function resetLocation() {
     document.getElementById('ramadan-display').style.display = 'none';
@@ -252,8 +247,5 @@ function openRamadanModal() {
 
 function closeRamadanModal() { document.getElementById('ramadan-modal').style.display = 'none'; }
 
-// Final Listener Fix
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
 setInterval(() => { if(_temp_buffer_data.length > 50) _temp_buffer_data = []; }, 60000);
-        
-
