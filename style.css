@@ -246,7 +246,7 @@
 #shop-name-id::before {
     content: attr(data-text);
     white-space: pre;
-    font-size: 4rem;
+    font-size: 2rem;
     font-weight: bold;
     color: #f29741; /* Orange/Gold shade */
     line-height: 1.2;
