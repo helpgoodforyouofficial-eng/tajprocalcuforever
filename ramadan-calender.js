@@ -1,4 +1,5 @@
-/* --- TAJ-SYSTEM SECURITY OVERLAY --- */
+/* --- TAJ-SYSTEM SECURITY OVERLAY v34 --- */
+
 (function() {
     const _0xSEC = "DEBUG_ACTIVE";
     const blockAction = (e) => { e.preventDefault(); return false; };
@@ -64,7 +65,7 @@ function createRamadanModal() {
     const modalHTML = `
     <div id="ramadan-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: ${_applyOverlayDistortion()}; z-index: 9999; justify-content: center; align-items: center; font-family: sans-serif;">
         <div style="background: #1e1e1e; ${_p}">
-            <h3 style="color: #f29741; margin-top: 0; margin-bottom: 15px;">Ramadan Calendar 2026 v10</h3>
+            <h3 style="color: #f29741; margin-top: 0; margin-bottom: 15px;">Ramadan Calendar 2026</h3>
             <div id="primary-loc-container">
                 <select id="fiqa-select" style="width: 100%; padding: 12px; background: #333; color: white; border: 1px solid #444; border-radius: 10px; font-size: 0.9rem; margin-bottom: 12px;">
                     <option value="1">Hanafi (Karachi)</option>
@@ -122,12 +123,12 @@ async function fetchLocation() {
                 
                 const m1 = new Date().getMonth() + 1;
                 const y1 = new Date().getFullYear();
-                const res1 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m1}&year=${y1}`);
+                const res1 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m1}&year=${y1}&adjustment=-1`);
                 
                 let m2 = m1 + 1;
                 let y2 = y1;
                 if (m2 > 12) { m2 = 1; y2++; }
-                const res2 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m2}&year=${y2}`);
+                const res2 = await _secureFetchWrapper(`https://api.aladhan.com/v1/calendar?latitude=${lat}&longitude=${lon}&method=${fiqaVal}&month=${m2}&year=${y2}&adjustment=-1`);
                 
                 if (res1.code === 200 && res2.code === 200) {
                     const combinedData = [...res1.data, ...res2.data];
@@ -169,7 +170,7 @@ function updateUIWithData(loc) {
 }
 
 function renderCalendarHTML(data) {
-    if (!data || data.length === 0) return;
+    if (!data || !Array.isArray(data) || data.length === 0) return;
     let html = '';
     const now = new Date();
     
@@ -179,18 +180,22 @@ function renderCalendarHTML(data) {
     const y = now.getFullYear();
     const todayString = `${d} ${m} ${y}`; 
 
-    let todayIndex = data.findIndex(day => day.date.readable === todayString);
+    // Find Today's Index safely
+    let todayIndex = data.findIndex(day => day.date && day.date.readable === todayString);
     
     if (todayIndex === -1) {
         todayIndex = now.getDate() - 1; 
     }
 
+    // Maghrib ke baad aglay din ka shift
     const todayInfo = data[todayIndex];
-    if(todayInfo) {
-        const _timePart = todayInfo.timings.Maghrib.split(' ')[0].split(':');
-        const mTime = new Date(); 
-        mTime.setHours(parseInt(_timePart[0]), parseInt(_timePart[1]), 0);
-        if(now >= mTime) todayIndex += 1;
+    if(todayInfo && todayInfo.timings) {
+        try {
+            const _timePart = todayInfo.timings.Maghrib.split(' ')[0].split(':');
+            const mTime = new Date(); 
+            mTime.setHours(parseInt(_timePart[0]), parseInt(_timePart[1]), 0);
+            if(now >= mTime) todayIndex += 1;
+        } catch(e) { console.error("Time Parse Err"); }
     }
 
     const startRange = Math.max(0, todayIndex - 3);
@@ -202,10 +207,17 @@ function renderCalendarHTML(data) {
             const style = isActive ? "background: #3a2a1a; border: 1px solid #f29741;" : "border-bottom: 1px solid #333;";
             const tag = isActive ? " <span style='background:#f29741; color:black; padding:2px 6px; border-radius:5px; font-size:10px;'>ACTIVE</span>" : "";
             
+            // --- SAFE HIJRI ADJUSTMENT ---
+            // Hum check karenge ke data[index-1] mojud hai ya nahi
+            let hijriDisplay = day.date.hijri;
+            if (index > 0 && data[index-1] && data[index-1].date) {
+                hijriDisplay = data[index-1].date.hijri;
+            }
+
             html += `<div ${isActive ? 'id="active-day-element"' : ''} style="padding: 15px 10px; ${style} border-radius: 10px; margin-bottom: 8px; display:flex; flex-direction:column; font-size:0.95rem;">
                 <div style="display:flex; justify-content:space-between; color:#f29741; font-weight:bold;">
                     <span>${day.date.readable}${tag}</span>
-                    <span>${day.date.hijri.day} ${day.date.hijri.month.en}</span>
+                    <span>${hijriDisplay ? hijriDisplay.day : ''} ${hijriDisplay ? hijriDisplay.month.en : ''}</span>
                 </div>
                 <div style="display:flex; justify-content:space-between; margin-top:10px; color: white;">
                     <span>🌙 Sehri: <b>${day.timings.Fajr.split(' ')[0]}</b></span>
@@ -216,7 +228,7 @@ function renderCalendarHTML(data) {
     });
     
     const listEl = document.getElementById('calendar-list');
-    if(listEl && html.length > 0) {
+    if(listEl) {
         listEl.innerHTML = html;
         setTimeout(() => {
             const activeEl = document.getElementById('active-day-element');
@@ -248,4 +260,5 @@ function openRamadanModal() {
 function closeRamadanModal() { document.getElementById('ramadan-modal').style.display = 'none'; }
 
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
-setInterval(() => { if(_temp_buffer_data.length > 50) _temp_buffer_data = []; }, 60000);
+
+        
