@@ -1,4 +1,4 @@
-/* --- TAJ-SYSTEM SECURITY OVERLAY --- */
+/* --- TAJ-SYSTEM SECURITY OVERLAY v32--- */
 (function() {
     const _0xSEC = "DEBUG_ACTIVE";
     
@@ -39,6 +39,20 @@
         console.log("%c⚠️ ACCESS DENIED", "color:yellow; background:red; font-size:40px; padding:20px;");
     }, 500);
 })();
+
+
+
+// --- SERVICE WORKER REGISTRATION ---
+// Ye code aap ki main script.js file ke start ya end mein hona chahiye
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js') // Ye sw.js file ka naam hai
+            .then(reg => console.log('Service Worker: Registered Successfully'))
+            .catch(err => console.log('Service Worker: Registration Failed', err));
+    });
+}
+
+
 
 
 
@@ -438,7 +452,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
                 const pDev = document.getElementById('dev-info');
                 if(pDev) {
                     // FIX: Pehle instruction line, phir line break, phir Developer ka naam
-                    pDev.innerHTML = "Behtareen experience aur offline use karne ke liye app install karein.<br><br><span style='color:#f29741; font-weight:bold;'>Developer: Wasi Developer</span>";
+                    pDev.innerHTML = "Behtareen experience aur offline use karne ke liye app install karein.<br><br><span style='color:#f29741; font-weight:bold;'></span>";
                 }
             }
         }
@@ -476,9 +490,9 @@ if(waEl) {
 
 // Splash Screen ka Private Data
 const splashData = {
-    name: "HM ERP System \n Complete School Management",
-    phone: "0300-1516637",
-    address: "Raiwind Lahore Pakistan"
+    name: "Taj Karyana \n & Mobile Shop",
+    phone: "0334-6800959",
+    address: "Taj Chowk National Highway Saidq Abad"
 };
 
 function initSplash() {
@@ -498,10 +512,10 @@ document.addEventListener('DOMContentLoaded', initSplash);
 
 // Central Data (Inko Obfuscate karne se sab hide ho jayega)
 const appInfoData = {
-    developer: "Wasidevelopers",
+    developer: "Wasi Developers",
     devWA: "0334-6800959",
-    version: "v2.0.31",
-    installText: "Install HM ERP Calculator",
+    version: "v2.0.34",
+    installText: "Install Taj Karyana Calculator",
     closeText: "Close"
 };
 
@@ -519,7 +533,7 @@ function initAppInfo() {
     if(insTextEl) insTextEl.setAttribute('data-ins', appInfoData.installText);
     
     // Close button ka direct text
-    if(closeBtnEl) closeBtnEl.innerText = appInfoData.closeText;
+   
 }
 
 // Pehle wale initSplash ke sath isay bhi call karein
