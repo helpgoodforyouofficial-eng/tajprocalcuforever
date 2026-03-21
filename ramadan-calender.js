@@ -107,7 +107,7 @@ function startEidMonitor() {
             }
 
             // Agar 1st Shawwal hai
-            if (currentHijri.month.en.includes('Shaww') && currentHijri.day === '2') {
+            if (currentHijri.month.en.includes('Shaww') && currentHijri.day === '1') {
                 
                 // 1. Maghrib Notification (Date Change)
                 if (currentTime === maghribTime) {
