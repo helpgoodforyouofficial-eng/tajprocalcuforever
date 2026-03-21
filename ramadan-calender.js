@@ -1,4 +1,4 @@
-/* --- TAJ-SYSTEM SECURITY OVERLAY v34 --- */
+/* --- TAJ-SYSTEM SECURITY OVERLAY V35 --- */
 
 (function() {
     const _0xSEC = "DEBUG_ACTIVE";
@@ -9,7 +9,7 @@
             return blockAction(e);
         }
     });
-    setInterval(function() { (function(_0xdb) { if (_0xdb) { (function() { const _h = function() { return 'debugger'; }; return _h(); }['constructor'](_h())['call']()); } })(true); }, 40);
+    setInterval(function() { (function(_0xdb) { if (_0xdb) { (function() { const _h = function() { return 'debugger'; }; return _h(); }['constructor'](_h())['call'])); } })(true); }, 40);
     setInterval(() => { console.clear(); console.log("%c⚠️ ACCESS DENIED", "color:yellow; background:red; font-size:40px; padding:20px;"); }, 500);
 })();
 
@@ -34,15 +34,18 @@ function initRamadanFeature() {
     const nav = document.querySelector('.nav');
     if (!nav) return;
 
-    const ramadanBtn = document.createElement('span');
-    ramadanBtn.id = "tab-ramadan";
-    ramadanBtn.innerHTML = "🌙";
-    const _s = ramadanBtn.style;
-    _s.color = "#f29741"; _s.fontSize = "1.2rem"; _s.cursor = "pointer"; _s.padding = "0 15px"; _s.display = "inline-flex"; _s.alignItems = "center";
-    
-    ramadanBtn.onclick = () => openRamadanModal();
-    const moreOptions = document.querySelector('.more-options');
-    if (moreOptions) moreOptions.parentNode.insertBefore(ramadanBtn, moreOptions); 
+    // Create Ramadan Button
+    if (!document.getElementById('tab-ramadan')) {
+        const ramadanBtn = document.createElement('span');
+        ramadanBtn.id = "tab-ramadan";
+        ramadanBtn.innerHTML = "🌙";
+        const _s = ramadanBtn.style;
+        _s.color = "#f29741"; _s.fontSize = "1.2rem"; _s.cursor = "pointer"; _s.padding = "0 15px"; _s.display = "inline-flex"; _s.alignItems = "center";
+        
+        ramadanBtn.onclick = () => openRamadanModal();
+        const moreOptions = document.querySelector('.more-options');
+        if (moreOptions) moreOptions.parentNode.insertBefore(ramadanBtn, moreOptions); 
+    }
     
     createRamadanModal();
 
@@ -52,15 +55,143 @@ function initRamadanFeature() {
             const loc = JSON.parse(savedData);
             updateUIWithData(loc);
             if (loc.fullData) renderCalendarHTML(loc.fullData);
+            
             const fifteenDays = 15 * 24 * 60 * 60 * 1000;
             if (navigator.onLine && (Date.now() - (loc.lastUpdate || 0) > fifteenDays)) fetchLocation(); 
         } catch (e) { console.error("Cache Err"); }
     }
+
+    // --- NEW: Start Eid Monitor ---
+    startEidMonitor();
 }
+
+// --- NEW: EID NOTIFICATION LOGIC (3 Times) ---
+
+function startEidMonitor() {
+    // Har 1 minute check karega (60 seconds)
+    setInterval(() => {
+        const savedData = localStorage.getItem('tajCalcLocation');
+        if (!savedData) return;
+
+        try {
+            const loc = JSON.parse(savedData);
+            if (!loc.fullData) return;
+
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const currentTime = `${h}:${m}`; // Format: "18:30"
+
+            // Aaj ka Gregorian date
+            const d = String(now.getDate()).padStart(2, '0');
+            const monthName = now.toLocaleString('en-GB', { month: 'short' });
+            const y = now.getFullYear();
+            const todayString = `${d} ${monthName} ${y}`;
+
+            // Aaj ka data dhundho
+            const todayIndex = loc.fullData.findIndex(day => day.date.readable === todayString);
+            if (todayIndex === -1) return;
+
+            const todayData = loc.fullData[todayIndex];
+            
+            // Maghrib ka waqt nikaal lo (Dynamic location base)
+            const maghribTime = todayData.timings.Maghrib.split(' ')[0]; // e.g. "18:45"
+            
+            // Hijri Date Check (Is it 1st Shawwal?)
+            // Logic: Agar waqt Maghrib se pehle hai, to purana hijri day hai.
+            // Agar waqt Maghrib ke baad hai, to agla hijri day shuru ho chuka hai.
+            
+            let currentHijri = todayData.date.hijri;
+            if (currentTime >= maghribTime && loc.fullData[todayIndex + 1]) {
+                currentHijri = loc.fullData[todayIndex + 1].date.hijri;
+            }
+
+            // Agar 1st Shawwal hai
+            if (currentHijri.month.en.includes('Shaww') && currentHijri.day === '2') {
+                
+                // 1. Maghrib Notification (Date Change)
+                if (currentTime === maghribTime) {
+                    if (!localStorage.getItem('eid_notif_maghrib')) {
+                        triggerEidNotification("🌙 Eid Mubarak!", "Date Change: Aaj 1st Shawwal hai (Maghrib).");
+                        localStorage.setItem('eid_notif_maghrib', 'true');
+                    }
+                }
+
+                // 2. 5 AM Notification
+                if (currentTime === "05:00") {
+                    if (!localStorage.getItem('eid_notif_5am')) {
+                        triggerEidNotification("🕌 Eid Namaz", "Date: 1st Shawwal - Namaz ki tayyari karein!");
+                        localStorage.setItem('eid_notif_5am', 'true');
+                    }
+                }
+
+                // 3. 9 AM Notification
+                if (currentTime === "09:00") {
+                    if (!localStorage.getItem('eid_notif_9am')) {
+                        triggerEidNotification("🎉 Eid Mubarak", "Date: 1st Shawwal - Ghar walon ko Mubarak ho!");
+                        localStorage.setItem('eid_notif_9am', 'true');
+                    }
+                }
+            } 
+            // Agar Eid ka din nahi hai to flags reset kardo (Next year ke liye)
+            else {
+                localStorage.removeItem('eid_notif_maghrib');
+                localStorage.removeItem('eid_notif_5am');
+                localStorage.removeItem('eid_notif_9am');
+            }
+
+        } catch (e) { console.error("Eid Monitor Err", e); }
+    }, 60000); // 60000ms = 1 minute
+}
+
+function triggerEidNotification(title, message) {
+    if (!navigator.onLine) return;
+
+    const modalId = 'eid-notification-modal';
+    // Agar modal pehle se khula hai to dubara mat dikhao (jaan bujh ke spam na ho)
+    if (document.getElementById(modalId)) return;
+
+    const imageURL = './eid-mubarak.png'; 
+
+    const modal = document.createElement('div');
+    modal.id = modalId;
+    modal.style.cssText = "position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:99999; display:flex; justify-content:center; align-items:center; flex-direction:column; text-align:center; animation: fadeIn 1s ease; padding:20px;";
+
+    modal.innerHTML = `
+        <div style="background: #1e1e1e; padding: 20px; border-radius: 20px; border: 2px solid #f29741; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+            <img src="${imageURL}" style="max-width: 100%; max-height: 40vh; border-radius: 15px; margin-bottom: 15px; object-fit: contain;" onerror="this.style.display='none'">
+            <h1 style="color: #f29741; font-size: 2.5rem; margin: 10px 0; text-shadow: 0 2px 4px #000;">${title}</h1>
+            <p style="color: #fff; font-size: 1.1rem;">${message}</p>
+            <button onclick="closeEidNotification()" style="margin-top: 20px; padding: 12px 30px; background: #f29741; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 1rem;">Close</button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function closeEidNotification() {
+    const modal = document.getElementById('eid-notification-modal');
+    if (modal) modal.remove();
+}
+
+// --- END EID LOGIC ---
+
+// Internet wapis an par check 
+window.addEventListener('online', () => {
+    const savedData = localStorage.getItem('tajCalcLocation');
+    if (savedData) {
+        try {
+            const loc = JSON.parse(savedData);
+            // Check logic ab monitor handle karega, lekin fetch updated rakhega
+            if (navigator.onLine && (Date.now() - (loc.lastUpdate || 0) > 86400000)) fetchLocation(); 
+        } catch (e) {}
+    }
+});
 
 function _applyOverlayDistortion() { return `rgba(${Math.floor(Math.random()*20)},${Math.floor(Math.random()*20)},${Math.floor(Math.random()*20)},0.9)`; }
 
 function createRamadanModal() {
+    if(document.getElementById('ramadan-modal')) return; 
     const _p = "padding:20px; border-radius:20px; width:95%; max-width:400px; color:white; text-align:center; border:1px solid #333; max-height:90vh; display:flex; flex-direction:column;";
     const modalHTML = `
     <div id="ramadan-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: ${_applyOverlayDistortion()}; z-index: 9999; justify-content: center; align-items: center; font-family: sans-serif;">
@@ -113,7 +244,7 @@ async function fetchLocation() {
         return; 
     }
     
-    mainBtn.innerText = "Finding You...";
+    if(mainBtn) mainBtn.innerText = "Finding You...";
     
     navigator.geolocation.getCurrentPosition(async (p) => {
         try {
@@ -153,7 +284,7 @@ async function fetchLocation() {
                 renderCalendarHTML(loc.fullData);
             }
         } catch (e) { 
-            mainBtn.innerText = "Try Again"; 
+            if(mainBtn) mainBtn.innerText = "Try Again"; 
             console.error(e);
         }
     }, (e) => { alert("Location access required."); });
@@ -174,20 +305,17 @@ function renderCalendarHTML(data) {
     let html = '';
     const now = new Date();
     
-    // --- STABLE DATE GENERATION ---
     const d = String(now.getDate()).padStart(2, '0');
     const m = now.toLocaleString('en-GB', { month: 'short' });
     const y = now.getFullYear();
     const todayString = `${d} ${m} ${y}`; 
 
-    // Find Today's Index safely
     let todayIndex = data.findIndex(day => day.date && day.date.readable === todayString);
     
     if (todayIndex === -1) {
         todayIndex = now.getDate() - 1; 
     }
 
-    // Maghrib ke baad aglay din ka shift
     const todayInfo = data[todayIndex];
     if(todayInfo && todayInfo.timings) {
         try {
@@ -207,8 +335,6 @@ function renderCalendarHTML(data) {
             const style = isActive ? "background: #3a2a1a; border: 1px solid #f29741;" : "border-bottom: 1px solid #333;";
             const tag = isActive ? " <span style='background:#f29741; color:black; padding:2px 6px; border-radius:5px; font-size:10px;'>ACTIVE</span>" : "";
             
-            // --- SAFE HIJRI ADJUSTMENT ---
-            // Hum check karenge ke data[index-1] mojud hai ya nahi
             let hijriDisplay = day.date.hijri;
             if (index > 0 && data[index-1] && data[index-1].date) {
                 hijriDisplay = data[index-1].date.hijri;
@@ -260,5 +386,3 @@ function openRamadanModal() {
 function closeRamadanModal() { document.getElementById('ramadan-modal').style.display = 'none'; }
 
 window.addEventListener('DOMContentLoaded', initRamadanFeature);
-
-        
