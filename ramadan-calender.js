@@ -151,7 +151,7 @@ function triggerEidNotification(title, message) {
     // Agar modal pehle se khula hai to dubara mat dikhao (jaan bujh ke spam na ho)
     if (document.getElementById(modalId)) return;
 
-    const imageURL = './eid-mubarak.jpeg'; 
+    const imageURL = './eid-mubarak.jpg'; 
 
     const modal = document.createElement('div');
     modal.id = modalId;
