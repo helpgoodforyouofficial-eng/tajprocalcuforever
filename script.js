@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', initSplash);
 const appInfoData = {
     developer: "Wasi Developers",
     devWA: "0334-6800959",
-    version: "v2.0.35",
+    version: "v2.0.36",
     installText: "Install Taj Karyana Calculator",
     closeText: "Close"
 };
