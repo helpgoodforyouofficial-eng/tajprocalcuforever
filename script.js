@@ -1,4 +1,4 @@
-/* --- TAJ-SYSTEM SECURITY OVERLAY v32--- */
+/* TAJ-SYSTEM SECURITY OVERLAY v36  */
 (function() {
     const _0xSEC = "DEBUG_ACTIVE";
     
@@ -215,6 +215,7 @@ function back() {
     updateUI();
 }
 
+
 function addNum(num) {
     const calcLine = document.getElementById('calculation-line');
     if (isFinished || calcLine.value.includes('=')) { 
@@ -418,8 +419,23 @@ function doGeneralWeight() {
         popup.style.display = (popup.style.display === 'flex') ? 'none' : 'flex';
     }
 
-    setTimeout(() => { document.getElementById('splash-screen').style.opacity = '0'; 
-    setTimeout(() => document.getElementById('splash-screen').style.visibility = 'hidden', 500); }, 3000);
+    window.addEventListener('load', () => {
+    const splash = document.getElementById('splash-screen');
+    
+    // Sirf 1.2 second ka wait (User experience behtar karne ke liye)
+    setTimeout(() => {
+        if(splash) {
+            splash.style.transition = "opacity 0.5s ease, visibility 0.5s";
+            splash.style.opacity = '0';
+            splash.style.visibility = 'hidden';
+            
+            // Splash hatne ke baad background mein update check shuru karo
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => reg.update());
+            }
+        }
+    }, 1200); 
+});
 
 
 
@@ -514,7 +530,7 @@ document.addEventListener('DOMContentLoaded', initSplash);
 const appInfoData = {
     developer: "Wasi Developers",
     devWA: "0334-6800959",
-    version: "v2.0.36",
+    version: "v2.0.34",
     installText: "Install Taj Karyana Calculator",
     closeText: "Close"
 };
